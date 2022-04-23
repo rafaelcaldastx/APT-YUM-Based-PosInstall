@@ -5,8 +5,8 @@ Nesta versão inicial estão disponiveis 2 opções de instalação, pacotes de 
 
 Para utilizá-lo basta abrir o seu terminal e rodar o comando abaixo:
 ```
-	@@ -16,13 +16,17 @@ chmod +x script.sh
-
+chmod +x script.sh
+```
 E por fim digite o seguinte:
 ```
 ./script.sh -utils
@@ -23,9 +23,11 @@ This is a post installation script for Linux operational systems based in Debian
 Here are the main files, packets and configs necessary for you start a good using of your recent installed SO. 
 
 To use it, just run the following command in your terminal:
-	@@ -36,8 +40,11 @@ chmod +x script.sh
+```
+chmod +x script.sh
+```
 
-And than, run the following command:
+And then, run the following command:
 ```
 ./script.sh -utils
 ```
