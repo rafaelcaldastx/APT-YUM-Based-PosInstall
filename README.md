@@ -9,10 +9,6 @@ chmod +x script.sh
 ```
 E por fim digite o seguinte:
 ```
-./script.sh -utils
-```
-ou
-```
 ./script.sh -dev
 ```
 
@@ -28,10 +24,6 @@ chmod +x script.sh
 ```
 
 And then, run the following command:
-```
-./script.sh -utils
-```
-or
 ```
 ./script.sh -dev
 ```
