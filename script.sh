@@ -1,4 +1,28 @@
 #!/bin/bash
+#
+#   Script de Pós-Instalação
+#   Autor: Rafael Caldas
+#   GitHub: https://github.com/rafaelcaldastx
+#   Fork do Projeto: https://github.com/Diolinux/Linux-Mint-19.x-PosInstall (Diolinux)
+#
+# ----------------------------------------------------------------------------------------------------- #
+#   Este script foi feito com o intuito de instalar conjuntos de programas predefinidos
+#   para algumas das atividades nas minhas instalações, upgrade dos pacotes existentes
+#   e limpeza de pacotes descartáveis.
+#
+#   Para alterar os programas, altere a váriavel PROGRAMAS_PARA_INSTALAR dentro da opção
+#   que deseja modificar da seguinte forma:
+#   PROGRAMAS_PARA_INSTALAR=(
+#     "nome do pacote"
+#     "forma de instalacao"
+#   )
+#   **as formas de instalação podem ser gerenciador, snap ou diretamente a url do pacote
+#
+#   Utilização:
+#   1-) Dê a permissão de execução do script para o usuário com chmod
+#         ex. $ chmod u+x script.sh
+#   2-) Execute o script com ./script.sh [opção]
+#         ex. $ ./script.sh -dev
 # ----------------------------------------------------------------------------------------------------- #
 # Changelog:
 #
@@ -7,15 +31,17 @@
 #
 #     -h     | -help          [ Exibe a ajuda do script.                         ]
 #     -dev   | -desenvolvedor [ Instala os pacotes basicos para desenvolvimento. ]
-#     -utils                  [ Instala utilitarios gerais                       ]
 #
-#     ** Prioridade de instalação: 1- Gerenciador nativo 2- Pacote Baixado 3- Snap
+# ----------------------------------------------------------------------------------------------------- #
+# Testado em:
+#   bash 5.1.8
 # ----------------------------------------------------------------------------------------------------- #
 
-# -------------------------------------------VARIÁVEIS------------------------------------------------- #
+# ------------------------------------Variáveis e Funções iniciais------------------------------------- #
 
 # Estilo
 NEGRITO='\033[01m'
+
 # Cores
 VERMELHO='\033[01;31m'
 VERDE='\033[01;32m'
@@ -24,7 +50,7 @@ SEM_COR='\033[00;37m'
 ERRO_COR='\033[05;31m'
 
 # Pre-sets
-INFO_PRE="[INFO.] -"
+INFO_PRE='[INFO.] -'
 ERRO_PRE="[${ERRO_COR}ERROR${SEM_COR}] -"
 ALERT_PRE="[${AMARELO}ALERT${SEM_COR}] -"
 OK_PRE="[ ${VERDE}OK.${SEM_COR} ] -"
@@ -33,31 +59,57 @@ OK_PRE="[ ${VERDE}OK.${SEM_COR} ] -"
 DIR_DOWNLOADS="$HOME/Downloads"
 DIR_PROGRAMAS="$DIR_DOWNLOADS/programas"
 
-# Parametros
-if [ ! -n "$2" ]; then
-  if [ -n "$1" ]; then
+# Mensageiro
+msg () {
+  case $1 in
+    'erro' )
+      echo -e "${ERRO_PRE} $2"
+      exit 1
+      ;;
+    'alerta' )
+      echo -e "${ALERT_PRE} $2"
+      ;;
+    'info' )
+      echo -e "${INFO_PRE} $2"
+      ;;
+    'ok' )
+      echo -e "${OK_PRE} $2"
+      ;;
+  esac
+}
+
+# Verifica Parametros
+if [[ ! -n "$2" ]]; then
+  if [[ -n "$1" ]]; then
     PARAM=$1
   else
-    echo -e "${ERRO_PRE} Esse script requer parametros, utilize ${NEGRITO}-h${SEM_COR} para verificar as opções disponíveis. \nNenhuma modificação foi realizada no seu sistema."
+    msg 'erro' "Esse script requer parametros, utilize ${NEGRITO}-h${SEM_COR} para verificar as opções disponíveis. \nNenhuma modificação foi realizada no seu sistema."
   fi
 else
-  echo -e "${ERRO_PRE} Parametros excessivos, 1 parametro permitido e $# passados."
-  exit 1
+  msg 'erro' "Parametros excessivos, 1 parametro permitido e $# passados."
 fi
 
 case $PARAM in
-  -h             ) OP="help" ;;
-  -help          ) OP="help" ;;
-  -dev           ) OP="dev"  ;;
-  -desenvolvedor ) OP="dev"  ;;
-  *              ) echo -e "${ERRO_PRE} Parametro inválido, utilize -h para verificar as opções disponíveis." && exit 1 ;;
+  '-h'|'-help' )
+    OP='help' ;;
+  '-dev'|'-desenvolvedor' )
+    OP='dev' ;;
+  * )
+    msg 'erro' "Parametro inválido, utilize -h para verificar as opções disponíveis." ;;
 esac
 
-if [[ $OP == "help" ]]; then
-  echo -e "\nScript pré-set de instalação 1.0 (amd64) \nUtilização: $0 [opção]\n"
-  echo -e "Comandos disponíveis: \n"
-  echo -e " -h   | -help          [ Exibe a ajuda do script.                         ]"
-  echo -e " -dev | -desenvolvedor [ Instala os pacotes basicos para desenvolvimento. ]"
+# Opção Help
+if [[ $OP == 'help' ]]; then
+  cat <<- END
+
+  Script pré-set de instalação 1.0 (amd64)
+  Utilização: $0 [opção]
+
+  Comandos disponíveis:
+  -h   | -help          [ Exibe a ajuda do script.                         ]
+  -dev | -desenvolvedor [ Instala os pacotes basicos para desenvolvimento. ]
+
+END
   exit 1
 fi
 
@@ -70,14 +122,11 @@ else
     GERENCIADOR=yum
     PACOTES=rpm
   else
-    echo -e "${ERRO_PRE} Este script funciona apenas para sistemas com o gerenciador de pacotes ${NEGRITO}apt${SEM_COR} ou ${NEGRITO}yum${SEM_COR}. /nCancelando execução."
-    exit 1
+    msg 'erro' "Este script funciona apenas para sistemas com o gerenciador de pacotes ${NEGRITO}apt${SEM_COR} ou ${NEGRITO}yum${SEM_COR}. /nCancelando execução."
   fi
 fi
-echo -e "Script de Pós-Instalação - Opção selecionada $OP - Gerenciador $GERENCIADOR - Pacotes $PACOTES"
-echo -e "${SEM_COR}${INFO_PRE} Gerenciador de pacotes selecionado (${NEGRITO} $GERENCIADOR ${SEM_COR})."
 
-# Programas
+# Programas para instalar
 if [[ $OP == "dev" ]]; then
   if [[ $GERENCIADOR == "apt" ]]; then
     PROGRAMAS_PARA_INSTALAR=(
@@ -114,21 +163,19 @@ if [[ $OP == "dev" ]]; then
   fi
 fi;
 
-
-
 # ---------------------------------------------------------------------------------------------------- #
 
-# -------------------------------Verificador de dependencias ----------------------------------------- #
+# ----------------------------------------Verificador de dependencias -------------------------------- #
 
 verificar_instalacao () {
-  if [ $1 == "apt" ]; then
+  if [[ $1 == "apt" ]]; then
     if dpkg -l $2 &> /dev/null; then
       INSTALAR="0"
     else
       INSTALAR="1"
     fi
   fi
-  if [ $1 == "yum" ]; then
+  if [[ $1 == "yum" ]]; then
     if rpm -q $2 &> /dev/null; then
       INSTALAR="0"
     else
@@ -137,43 +184,48 @@ verificar_instalacao () {
   fi
 }
 
-# -------------------------------TESTES----------------------------------------- #
+# ---------------------------------------------------------------------------------------------------- #
 
+# -------------------------------------------Testes no ambiente--------------------------------------- #
+
+testa_ambiente () {
 # Internet conectando?
+msg 'info' "Verificando conexão..."
 if ! ping -c 1 8.8.8.8 -q &> /dev/null; then
-  echo -e "${ERRO_PRE} Seu computador não tem conexão com a Internet. Verifique os cabos e o modem."
-  exit 1
+  msg 'erro' "Seu computador não tem conexão com a Internet. Verifique os cabos e o modem."
 else
-  echo -e "${OK_PRE} Conexão com a Internet funcionando normalmente."
+  msg 'ok' "Conexão com a Internet funcionando normalmente."
 fi
 
 # wget está instalado?
-PROGRAMA="wget"
+PROGRAMA='wget'
+msg 'info' "Verificando instalação do ${NEGRITO}${PROGRAMA}${SEM_COR}..."
 verificar_instalacao $GERENCIADOR $PROGRAMA
-if [ "$INSTALAR" == "1" ]; then
-  echo -e "${ALERT_PRE} O programa wget não está instalado."
-  echo -e "${INFO_PRE} Instalando o wget..."
+if [[ "$INSTALAR" == '1' ]]; then
+  msg 'alerta' "O programa ${NEGRITO}${PROGRAMA}${SEM_COR} não está instalado."
+  msg 'info' "Instalando o wget..."
   sudo $GERENCIADOR install wget -y &> /dev/null
 else
-  echo -e "${OK_PRE} O programa wget já está instalado."
+  msg 'ok' "O programa ${NEGRITO}${PROGRAMA}${SEM_COR} já está instalado."
 fi
+}
 
-# ------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------- #
 
-# -------------------------------FUNÇÕES----------------------------------------- #
+# ------------------------------------------Funções--------------------------------------------------- #
 
 remover_locks () {
-  echo -e "${INFO_PRE} Removendo locks..."
-  if [ "$1" == "apt" ]; then
+  msg 'info' "Removendo locks..."
+  if [[ "$1" == 'apt' ]]; then
     sudo rm /var/lib/dpkg/lock-frontend &> /dev/null
     sudo rm /var/cache/apt/archives/lock &> /dev/null
   else
-    echo -e "${INFO_PRE} Sem locks para remover em yum."
+    msg 'info' "Sem locks para remover em yum."
   fi
 }
 
 atualizar_repositorios () {
-  echo -e "${INFO_PRE} Atualizando repositórios..."
+  msg 'info' "Atualizando repositórios..."
   sudo apt update &> /dev/null
 }
 
@@ -183,80 +235,82 @@ verificar_diretorios () {
 }
 
 instalar_programa () {
-  if [ $1 == "apt" ]; then
-    if [ $2 == "pacote" ]; then
+  if [[ "$1" == 'apt' ]]; then
+    if [[ "$2" == 'pacote' ]]; then
       verificar_diretorios
       echo "$DIR_PROGRAMAS/$3.$PACOTES"
       sudo dpkg -i "$DIR_PROGRAMAS/$3.$PACOTES" &> /dev/null
-      echo -e "${INFO_PRE} Instalando dependências..."
+      msg 'info' "Instalando dependências..."
       sudo apt -f install -y &> /dev/null
     fi
-    if [ $2 == "gerenciador" ]; then
-      sudo apt install $3 -y &> /dev/null
+    if [[ "$2" == 'gerenciador' ]]; then
+      sudo apt install "$3" -y &> /dev/null
     fi
   fi
-  if [ $1 == "yum" ]; then
-    if [ $2 == "pacote" ]; then
+  if [[ "$1" == 'yum' ]]; then
+    if [[ "$2" == 'pacote' ]]; then
       sudo rpm -i "$DIR_PROGRAMAS/$3.$PACOTES" &> /dev/null
     fi
-    if [ $2 == "gerenciador" ]; then
-      sudo yum install $3 -y &> /dev/null
+    if [[ "$2" == 'gerenciador' ]]; then
+      sudo yum install "$3" -y &> /dev/null
     fi
   fi
-  if [ $2 == "snap" ]; then
-    sudo snap install $3 &> /dev/null
+  if [[ "$2" == "snap" ]]; then
+    sudo snap install "$3" &> /dev/null
   fi
 }
 
 verificar_e_instalar_programas () {
-
   LENGHT=${#PROGRAMAS_PARA_INSTALAR[@]}
 
   for (( j=0; j<$LENGHT; j++ )); do
-    if [ $((j%2)) -eq '0' ]; then
+    if [[ $((j%2)) -eq '0' ]]; then
       PROGRAMA=${PROGRAMAS_PARA_INSTALAR[$j]}
       verificar_instalacao $GERENCIADOR $PROGRAMA
     else
-      if [ $INSTALAR == "1" ]; then
+      if [[ $INSTALAR == '1' ]]; then
         echo -e "Instalar ${PROGRAMA}"
         MODO=${PROGRAMAS_PARA_INSTALAR[$j]}
         case $MODO in
-          "gerenciador" )
-            echo -e "${INFO_PRE} Instalando ${PROGRAMA} à partir do ${GERENCIADOR}..."
+          'gerenciador' )
+            msg 'info' "Instalando ${NEGRITO}${PROGRAMA}${SEM_COR} à partir do ${GERENCIADOR}..."
             instalar_programa $GERENCIADOR $MODO $PROGRAMA
             ;;
-          "snap" )
-            echo -e "${INFO_PRE} Instalando snap de ${PROGRAMA}..."
+          'snap' )
+            msg 'info' "Instalando snap de ${NEGRITO}${PROGRAMA}${SEM_COR}..."
             instalar_programa $GERENCIADOR $MODO $PROGRAMA
             ;;
           * )
-            echo -e "${INFO_PRE} Baixando o arquivo ${PROGRAMA}...$MODO"
+            msg 'info' "Baixando o arquivo ${NEGRITO}${PROGRAMA}${SEM_COR}...$MODO"
             wget -c "$MODO" -O "$DIR_PROGRAMAS/$PROGRAMA.$PACOTES" &> /dev/null
-            echo -e "${INFO_PRE} Instalando ${PROGRAMA}..."
+            msg 'info' "Instalando ${PROGRAMA}..."
             instalar_programa $GERENCIADOR "pacote" ${PROGRAMA}
             ;;
         esac
       else
-        echo -e "${OK_PRE} O programa ${NEGRITO}${PROGRAMA}${SEM_COR} já está instalado."
+        msg 'ok' "O programa ${NEGRITO}${PROGRAMA}${SEM_COR} já está instalado."
       fi
     fi
   done
 }
 
 upgrade_e_limpa_sistema () {
-  echo -e "${INFO_PRE} Fazendo upgrade e limpeza do sistema..."
+  msg 'info' "Fazendo upgrade e limpeza do sistema..."
   sudo apt dist-upgrade -y &> /dev/null
   sudo apt autoclean &> /dev/null
   sudo apt autoremove -y &> /dev/null
 }
-# -------------------------------------------------------------------------------- #
 
-# -------------------------------EXECUÇÃO----------------------------------------- #
+# ---------------------------------------------------------------------------------------------------- #
 
+# --------------------------------------------Execução------------------------------------------------ #
+
+echo -e "\v${SEM_COR}Script de Pós-Instalação - Opção selecionada${NEGRITO}${OP}${SEM_COR}- Gerenciador de pacotes${NEGRITO} $GERENCIADOR ${SEM_COR}- Pacotes${NEGRITO}${PACOTES}${SEM_COR} \nSua senha de super usuário poderá ser solicitada durante a execução.\v"
+testa_ambiente
 remover_locks $GERENCIADOR
 atualizar_repositorios
 verificar_e_instalar_programas
 upgrade_e_limpa_sistema
-echo -e "${OK_PRE} Excecuçao concuida."
+msg 'ok' "Excecuçao concuida."
 
-# ------------------------------------------------------------------------------ #
+# ---------------------------------------------------------------------------------------------------- #
