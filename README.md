@@ -8,7 +8,10 @@ Para utilizá-lo basta abrir o seu terminal e rodar o comando abaixo:
 chmod u+x script.sh
 ```
 E por fim digite o seguinte:
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8f633c2e4b7f29961bb51bfc90ef8d41c7b28f04
 ```
 ./script.sh -dev
 ```
